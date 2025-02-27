@@ -1,9 +1,9 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tweet Detector</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/icon.png') }}" type="image/png">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,6 +25,7 @@
             border-radius: 5px;
             border: 1px solid #ccc;
             resize: none;
+            margin-bottom: 10px; /* Added margin */
         }
         .buttons {
             margin-top: 20px;
@@ -50,11 +51,24 @@
             font-size: 18px;
             font-weight: bold;
         }
+        select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            width: 150px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Tweet Detector</h2>
+
+        <select id="language" name="language">
+            <option value="en">English</option>
+            <option value="ml">Malayalam</option>
+        </select>
+
         <form action="/predict" method="post">
             <textarea name="tweet" id="tweet" rows="4" placeholder="Enter your tweet here..."></textarea><br><br>
             <div class="buttons">
@@ -74,4 +88,3 @@
     </script>
 </body>
 </html>
-
