@@ -3,20 +3,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     if (message.prediction && message.tweet) {
         let fullTweet = message.tweet;
-        let shortTweet = fullTweet.length > 200 ? fullTweet.substring(0, 200) + "..." : fullTweet;
+        let prediction = message.prediction;
 
         chrome.notifications.create({
             type: "basic",
             iconUrl: chrome.runtime.getURL("icon.png"),
             title: "Tweet Classification",
-            message: `Tweet: ${shortTweet}\n\nPrediction: ${message.prediction}`
+            message: `Prediction: ${prediction}\n\nTweet: ${fullTweet}`
         }, (notificationId) => {
             if (chrome.runtime.lastError) {
                 console.error("Notification error:", chrome.runtime.lastError.message);
             } else {
                 console.log("Notification created successfully:", notificationId);
-                // Store full tweet in storage for later access
-                chrome.storage.local.set({ [notificationId]: fullTweet });
             }
         });
 
