@@ -4,15 +4,20 @@ import numpy as np
 import re
 import nltk
 import traceback
+import pandas as pd
+import os
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import fasttext
 import fasttext.util
 
+# Download NLTK resources
 nltk.download('stopwords')
-nltk.data.path.append("C:/Users/KALARICKAL/nltk_data")  # Ensure correct NLTK path
 
 app = Flask(__name__)
+
+# Ensure NLTK path is correctly set
+nltk.data.path.append(os.path.expanduser("~/nltk_data"))
 
 # Load models
 try:
@@ -32,11 +37,13 @@ except Exception as e:
     traceback.print_exc()
     ft_model = None  # Set to None to avoid crashes
 
+# Detect language
 def detect_language(text):
     if re.search("[\u0D00-\u0D7F]", text):
         return "ml"
     return "en"
 
+# Preprocess English text
 def preprocess_text_en(text):
     try:
         pstem = PorterStemmer()
@@ -55,9 +62,10 @@ def preprocess_text_en(text):
         traceback.print_exc()
         return ""
 
+# Preprocess Malayalam text
 def preprocess_text_ml(text):
     try:
-        text = re.sub("[^\u0D00-\u0D7F]", " ", text)
+        text = re.sub("[^\u0D00-\u0D7F]", " ", text)  # Remove non-Malayalam characters
         words = text.split()
         if ft_model:  # Ensure model is loaded
             word_vectors = [ft_model.get_word_vector(word) for word in words if word in ft_model]
@@ -71,6 +79,7 @@ def preprocess_text_ml(text):
         traceback.print_exc()
         return np.zeros((1, 300))
 
+# Prediction API
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -78,7 +87,7 @@ def predict():
         if not data or 'tweet' not in data:
             return jsonify({"error": "Invalid input, 'tweet' key missing"}), 400
         
-        tweets = [t.strip() for t in data['tweet'].split("###") if t.strip()]
+        tweets = data['tweet']
         predictions = []
 
         for tweet in tweets:
@@ -93,12 +102,33 @@ def predict():
 
             predictions.append("HUMAN" if prediction[0] == 1 else "BOT")
 
-        return jsonify({"predictions": predictions})  # Ensure it's always a list
+        return jsonify({"predictions": predictions})
 
     except Exception as e:
         print(f"Error in prediction: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500  # Always return JSON
+
+# New API to handle CSV upload
+@app.route("/upload-csv", methods=["POST"])
+def upload_csv():
+    if "file" not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+
+    csv_file = request.files["file"]
+    if csv_file.filename == "":
+        return jsonify({"error": "Empty filename"}), 400
+
+    try:
+        df = pd.read_csv(csv_file)
+        if 'tweet' not in df.columns:
+            return jsonify({"error": "CSV must contain a 'tweet' column"}), 400
+        tweets = df['tweet'].dropna().tolist()
+        return jsonify({"tweets": tweets})
+    except Exception as e:
+        print(f"Error processing CSV file: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
